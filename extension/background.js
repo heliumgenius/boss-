@@ -27,15 +27,16 @@ async function pushCookies() {
   }
   if (Object.keys(cookies).length === 0) return;
 
-  try {
-    const r = await fetch(`${SERVER_URL}/cookies`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cookies, source: "edge-extension", timestamp: Date.now() }),
-    });
-    if (r.ok) lastSyncTime = Date.now();
-  } catch {
-    // server not running
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(`${SERVER_URL}/cookies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cookies, source: "edge-extension", timestamp: Date.now() }),
+      });
+      if (r.ok) { lastSyncTime = Date.now(); return; }
+    } catch {}
+    await new Promise(r => setTimeout(r, 1000));
   }
 }
 

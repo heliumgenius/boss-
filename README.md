@@ -100,6 +100,10 @@ extension/                # Edge 浏览器扩展
 └── popup.html/js
 ```
 
+## 致谢
+
+本项目基于 [jackwener/boss-cli](https://github.com/jackwener/boss-cli) 修改而来，感谢原作者的工作。
+
 ## 授权
 
 Apache-2.0

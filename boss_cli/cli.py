@@ -18,6 +18,8 @@ import click
 
 from . import __version__
 from .commands import auth, personal, search, social
+from .commands.cookie_server import cookie_server
+from .commands.doctor import doctor
 from .commands.recruiter import recruiter
 
 
@@ -61,6 +63,14 @@ cli.add_command(personal.interviews)
 cli.add_command(social.chat_list)
 cli.add_command(social.greet)
 cli.add_command(social.batch_greet)
+
+# ─── Cookie Server commands ─────────────────────────────────────────
+
+cli.add_command(cookie_server)
+
+# ─── Doctor commands ──────────────────────────────────────────────
+
+cli.add_command(doctor)
 
 # ─── Recruiter (Boss) commands ──────────────────────────────────────
 

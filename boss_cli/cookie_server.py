@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
@@ -76,6 +77,11 @@ class Handler(BaseHTTPRequestHandler):
                 "last_sync": _last_sync,
                 "cookies": _last_cookies,
             }).encode())
+        elif self.path == "/shutdown":
+            self.send_response(200)
+            self.end_headers()
+            import threading
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
         else:
             self.send_response(404)
             self.end_headers()
@@ -84,10 +90,17 @@ class Handler(BaseHTTPRequestHandler):
         logger.debug(format, *args)
 
 
-def main():
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-    server = HTTPServer((HOST, PORT), Handler)
-    print(f"[*] Cookie server listening on http://{HOST}:{PORT}")
+def run_server(host=HOST, port=PORT, daemon=False):
+    if daemon:
+        import subprocess
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "boss_cli.cookie_server", "--port", str(port)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        print(f"[*] Cookie server started on http://{host}:{port} (PID {proc.pid})")
+        return proc
+    server = HTTPServer((host, port), Handler)
+    print(f"[*] Cookie server listening on http://{host}:{port}")
     print(f"[*] Credential file: {Path.home() / '.config' / 'boss-cli' / 'credential.json'}")
     print("[*] Press Ctrl+C to stop")
     try:
@@ -95,6 +108,15 @@ def main():
     except KeyboardInterrupt:
         print("\n[*] Stopping")
         server.server_close()
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=PORT)
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    run_server(port=args.port)
 
 
 if __name__ == "__main__":
