@@ -1,20 +1,15 @@
-"""CLI entry point for Boss CLI.
-
-Usage:
-    boss login / status / logout
-    boss search <keyword> [--city C] [--salary S] [--exp E] [--degree D]
-    boss recommend [--page N]
-    boss me / applied / interviews / chat
-    boss greet <securityId>
-    boss batch-greet <keyword> [-n N] [--city C] [--dry-run]
-    boss cities
-"""
+"""CLI entry point for Boss CLI."""
 
 from __future__ import annotations
 
 import logging
+import sys
 
 import click
+
+# Prevent UnicodeEncodeError on Windows GBK terminals when outputting emoji
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(errors='replace')
 
 from . import __version__
 from .commands import auth, personal, search, social

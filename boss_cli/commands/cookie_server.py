@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import time
 import urllib.request
 
 import click
+from rich.console import Console
 
 SERVER_URL = "http://127.0.0.1:9876"
+
+console = Console()
 
 
 @click.group()
@@ -33,7 +37,7 @@ def stop():
         urllib.request.urlopen(req, timeout=3)
     except Exception:
         pass
-    click.echo("Cookie server stopped")
+    console.print("Cookie server stopped")
 
 
 @cookie_server.command("status")
@@ -42,14 +46,12 @@ def _status():
     try:
         resp = urllib.request.urlopen(f"{SERVER_URL}/status", timeout=3)
         data = resp.read().decode()
-        import json
-
         info = json.loads(data)
         last = info.get("last_sync", 0)
         cookies = info.get("cookies", {})
-        click.echo(f"Server: running")
+        console.print("Server: running")
         if last:
-            click.echo(f"Last sync: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last))}")
-        click.echo(f"Cookies: {len(cookies)} keys ({', '.join(cookies.keys())})")
+            console.print(f"Last sync: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last))}")
+        console.print(f"Cookies: {len(cookies)} keys ({', '.join(cookies.keys())})")
     except Exception:
-        click.echo("Server: not running")
+        console.print("Server: not running")
