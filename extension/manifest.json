@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "BOSS直聘 Cookie 推送器",
+  "version": "1.0.0",
+  "description": "从浏览器内存读取 zhipin.com Cookie 并推送到本地服务器，绕过 v20 磁盘加密",
+  "permissions": [
+    "cookies",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://*.zhipin.com/*",
+    "http://localhost:9876/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "BOSS Cookie 推送器"
+  }
+}
