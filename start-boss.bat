@@ -19,5 +19,5 @@ echo ========================================
 echo.
 pause
 
-taskkill /F /FI "WINDOWTITLE eq boss-cookie-server" >nul 2>&1
+.\.venv\Scripts\python.exe -m boss_cli.cli cookie-server stop >nul 2>&1
 echo [*] Server stopped.

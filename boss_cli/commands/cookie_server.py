@@ -32,12 +32,11 @@ def start(port, foreground):
 @cookie_server.command("stop")
 def stop():
     """停止 Cookie 服务器"""
-    try:
-        req = urllib.request.Request(f"{SERVER_URL}/shutdown", method="GET")
-        urllib.request.urlopen(req, timeout=3)
-    except Exception:
-        pass
-    console.print("Cookie server stopped")
+    from ..cookie_server import stop_server
+    if stop_server():
+        console.print("Cookie server stopped")
+    else:
+        console.print("Cookie server was not running")
 
 
 @cookie_server.command("status")

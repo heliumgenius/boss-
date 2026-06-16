@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -20,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 HOST = "127.0.0.1"
 PORT = 9876
+
+PID_FILE = str(Path.home() / ".config" / "boss-cli" / "cookie-server.pid")
 
 _last_cookies: dict[str, str] = {}
 _last_sync: float = 0
@@ -90,6 +93,45 @@ class Handler(BaseHTTPRequestHandler):
         logger.debug(format, *args)
 
 
+def stop_server() -> bool:
+    """Stop the cookie server. Returns True if it was running."""
+    pid = None
+    if os.path.exists(PID_FILE):
+        with open(PID_FILE) as f:
+            pid_str = f.read().strip()
+            if pid_str:
+                pid = int(pid_str)
+
+    # Try graceful HTTP shutdown first
+    stopped = False
+    try:
+        import urllib.request
+        req = urllib.request.Request(f"http://{HOST}:{PORT}/shutdown", method="GET")
+        urllib.request.urlopen(req, timeout=3)
+        stopped = True
+    except Exception:
+        pass
+
+    # Fallback: kill by PID
+    if pid:
+        try:
+            if sys.platform == "win32":
+                import subprocess
+                subprocess.call(["taskkill", "/F", "/PID", str(pid)],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                os.kill(pid, 9)
+            stopped = True
+        except Exception:
+            pass
+
+    # Clean up PID file
+    if os.path.exists(PID_FILE):
+        os.remove(PID_FILE)
+
+    return stopped
+
+
 def run_server(host=HOST, port=PORT, daemon=False):
     if daemon:
         import subprocess
@@ -97,9 +139,16 @@ def run_server(host=HOST, port=PORT, daemon=False):
             [sys.executable, "-m", "boss_cli.cookie_server", "--port", str(port)],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
+        Path(PID_FILE).parent.mkdir(parents=True, exist_ok=True)
+        with open(PID_FILE, "w") as f:
+            f.write(str(proc.pid))
         print(f"[*] Cookie server started on http://{host}:{port} (PID {proc.pid})")
         return proc
     server = HTTPServer((host, port), Handler)
+    # Write PID file (also covers the start-boss.bat case)
+    Path(PID_FILE).parent.mkdir(parents=True, exist_ok=True)
+    with open(PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
     print(f"[*] Cookie server listening on http://{host}:{port}")
     print(f"[*] Credential file: {Path.home() / '.config' / 'boss-cli' / 'credential.json'}")
     print("[*] Press Ctrl+C to stop")
