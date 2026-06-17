@@ -5,6 +5,9 @@ cd /d "%~dp0"
 echo [*] Stopping cookie server...
 .\.venv\Scripts\python.exe -m boss_cli.cli cookie-server stop
 
+echo [*] Stopping web UI...
+taskkill /F /FI "WINDOWTITLE eq boss-web-ui" >nul 2>&1
+
 echo [*] Closing Edge...
 taskkill /F /IM msedge.exe >nul 2>&1
 
