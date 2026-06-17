@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boss CLI</title>
+<script src="https://unpkg.com/htmx.org@2"></script>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+  <h1>Boss CLI 搜索</h1>
+
+  <form hx-post="/search" hx-target="#results" hx-indicator="#spinner"
+        hx-trigger="submit" id="search-form">
+    <div class="input-row">
+      <input type="text" name="query" placeholder="输入自然语言，如：找杭州 Python 20k以上 3年经验"
+             class="search-input" autofocus>
+      <button type="submit" class="btn btn-primary">搜索</button>
+    </div>
+  </form>
+
+  <div id="spinner" class="htmx-indicator">搜索中...</div>
+
+  <div id="results">
+    <p class="hint">输入关键词开始搜索</p>
+  </div>
+
+  <div id="action-bar" class="action-bar hidden">
+    <span id="selected-count">已选 0 个</span>
+    <button class="btn btn-success" onclick="batchGreet()">打招呼</button>
+  </div>
+
+  <div id="progress-panel" class="progress-panel hidden">
+    <div id="progress-status"></div>
+    <div id="progress-list"></div>
+  </div>
+</div>
+
+<script>
+let selectedJobs = [];
+
+document.body.addEventListener('change', function(e) {
+  if (e.target.classList.contains('job-check')) {
+    updateSelection();
+  }
+});
+
+document.body.addEventListener('htmx:afterSwap', function(e) {
+  if (e.detail.target.id === 'results') {
+    updateSelection();
+  }
+});
+
+function updateSelection() {
+  selectedJobs = [];
+  document.querySelectorAll('.job-check:checked').forEach(cb => {
+    selectedJobs.push({ securityId: cb.value, lid: cb.dataset.lid });
+  });
+  const count = document.getElementById('selected-count');
+  const bar = document.getElementById('action-bar');
+  if (count) count.textContent = `已选 ${selectedJobs.length} 个`;
+  if (bar) bar.classList.toggle('hidden', selectedJobs.length === 0);
+}
+
+async function batchGreet() {
+  if (selectedJobs.length === 0) return;
+  const panel = document.getElementById('progress-panel');
+  const status = document.getElementById('progress-status');
+  const list = document.getElementById('progress-list');
+  panel.classList.remove('hidden');
+  status.textContent = `对 ${selectedJobs.length} 个职位批量打招呼...`;
+  list.innerHTML = '';
+
+  const ids = selectedJobs.map(j => j.securityId);
+  const lid = selectedJobs[0].lid;
+
+  const resp = await fetch('/batch-greet', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids, lid }),
+  });
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const evt = JSON.parse(line.slice(6));
+          if (evt.status === 'ok') {
+            list.innerHTML += `<div class="progress-item ok">#${evt.index} ✅ 成功</div>`;
+          } else if (evt.status === 'fail') {
+            list.innerHTML += `<div class="progress-item fail">#${evt.index} ❌ ${evt.message || '失败'}</div>`;
+          }
+          list.scrollTop = list.scrollHeight;
+        } catch {}
+      }
+    }
+  }
+
+  status.textContent = '✅ 批量操作完成';
+}
+</script>
+</body>
+</html>

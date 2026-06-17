@@ -16,6 +16,7 @@ from .commands import auth, personal, search, social
 from .commands.cookie_server import cookie_server
 from .commands.doctor import doctor
 from .commands.recruiter import recruiter
+from .commands.web_ui import web_ui
 
 
 @click.group()
@@ -66,6 +67,10 @@ cli.add_command(cookie_server)
 # ─── Doctor commands ──────────────────────────────────────────────
 
 cli.add_command(doctor)
+
+# ─── Web UI ────────────────────────────────────────────────────────
+
+cli.add_command(web_ui)
 
 # ─── Recruiter (Boss) commands ──────────────────────────────────────
 

@@ -20,6 +20,10 @@ dependencies = [
     "httpx>=0.27",
     "browser-cookie3>=0.19",
     "qrcode>=7.0",
+    "fastapi>=0.100",
+    "uvicorn[standard]>=0.20",
+    "jinja2>=3.0",
+    "python-multipart>=0.0.5",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +55,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["boss_cli"]
+
+[tool.hatch.build]
+include = ["boss_cli/**"]
 
 [tool.pytest.ini_options]
 markers = [
